@@ -19,8 +19,8 @@
             --alarm-color: #ff4d4d; /* Neon Red */
             --inner-shadow: inset 3px 3px 6px #080814, inset -3px -3px 6px #1c1c42;
             --outer-shadow: 8px 8px 16px #080814, -8px -8px 16px #1c1c42;
-            --hover-effect: translateY(-5px);
-            --glow-effect: 0 0 10px var(--primary-accent), 0 0 20px var(--primary-accent), 0 0 30px var(--primary-accent);
+            --hover-effect: translateY(-3px);
+            --glow-effect: 0 0 8px var(--primary-accent), 0 0 16px var(--primary-accent), 0 0 24px var(--primary-accent);
         }
         
         body {
@@ -64,7 +64,7 @@
             grid-area: clock;
         }
         
-        .clock-card, .date-card {
+        .clock-card {
             flex: 1;
             display: flex;
             flex-direction: column;
@@ -76,6 +76,7 @@
             box-shadow: var(--outer-shadow);
             border: 1px solid rgba(0, 230, 255, 0.2);
             transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            text-align: center;
         }
         
         .date-card {
@@ -118,7 +119,7 @@
         /* Digital Clock */
         .digital-clock {
             font-family: 'Orbitron', sans-serif;
-            font-size: 6rem;
+            font-size: 4rem;
             color: var(--secondary-accent);
             text-align: center;
             text-shadow: 0 0 15px var(--secondary-accent), 0 0 30px var(--secondary-accent);
@@ -356,40 +357,50 @@
             box-shadow: var(--inner-shadow);
             margin-bottom: 20px;
         }
-
-        .chat-message {
-            background-color: #181830;
-            padding: 12px 18px;
-            border-radius: 20px;
-            word-wrap: break-word;
-            max-width: 85%;
-            align-self: flex-start; /* Default for incoming messages */
-            box-shadow: 2px 2px 5px rgba(0,0,0,0.4);
-            font-size: 1.05rem;
+        
+        .chat-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .chat-actions .cta-button {
+            padding: 10px 15px;
+            width: auto;
         }
 
+        /* --- Perubahan untuk Pesan Instan --- */
+        .chat-message {
+            padding: 0;
+            background: none;
+            word-wrap: break-word;
+            max-width: 85%;
+            font-size: 1.05rem;
+            align-self: flex-start;
+            margin-left: 0;
+            box-shadow: none;
+        }
         .chat-message.sent {
-            align-self: flex-end; /* Align user's messages to the right */
+            align-self: flex-end;
             margin-left: auto;
-            background-color: var(--primary-accent);
-            color: var(--bg-color-primary);
+            color: var(--primary-accent);
+        }
+        
+        .chat-message:not(.sent) {
+            color: var(--text-color-light);
         }
         
         .chat-form {
             display: flex;
             gap: 15px;
         }
-        
         .chat-form input {
             flex-grow: 1;
         }
-
-        .chat-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
+        .chat-form .cta-button {
+            width: auto;
+            padding: 10px 15px;
         }
-        
+
         /* --- Responsive Design --- */
         @media (max-width: 1024px) {
             .dashboard-container {
@@ -406,6 +417,9 @@
             .digital-clock {
                 font-size: 4rem;
             }
+            .date-display {
+                font-size: 1.2rem;
+            }
             h2 {
                 font-size: 1.5rem;
             }
@@ -418,9 +432,9 @@
             .dashboard-container {
                 grid-template-columns: 1fr;
                 gap: 20px;
+                padding: 0;
                 grid-template-areas: 
                     "clock"
-                    "date"
                     "alarm-control"
                     "prayer-times"
                     "chat-column"
@@ -431,34 +445,19 @@
                 gap: 20px;
                 grid-area: clock;
             }
-
             .clock-card {
                 grid-area: clock;
-            }
-
-            .date-card {
-                display: block;
-                grid-area: date;
-            }
-
-            .digital-clock {
-                font-size: 3.5rem;
             }
             .date-display {
                 font-size: 1.2rem;
                 margin: 0;
+                margin-top: 10px;
             }
             .card {
                 padding: 25px;
             }
-            .voice-settings .form-group {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            .voice-settings .form-group label,
-            .voice-settings .form-group input {
-                width: 100%;
-                margin-top: 5px;
+            .digital-clock {
+                font-size: 3.5rem;
             }
             .alarm-actions {
                 display: flex;
@@ -512,13 +511,9 @@
 <body>
 
     <div class="dashboard-container">
-        <header class="clock-container">
-            <div class="clock-card">
-                <div class="digital-clock" id="digital-clock"></div>
-            </div>
-            <div class="date-card">
-                <p class="date-display" id="date-display"></p>
-            </div>
+        <header class="clock-card">
+            <div class="digital-clock" id="digital-clock"></div>
+            <p class="date-display" id="date-display"></p>
         </header>
 
         <section class="alarm-control-section card">
@@ -566,12 +561,8 @@
                 <button type="submit" class="cta-button" style="width: auto; padding: 10px 15px;"><i class="fas fa-paper-plane"></i></button>
             </form>
             <div class="chat-actions">
-                <button type="button" class="cta-button test-audio-btn" id="reset-chat-btn" style="width: auto; flex-grow: 1;">
-                    <i class="fas fa-trash-alt"></i> Reset Pesan
-                </button>
-                <button type="button" class="cta-button test-audio-btn" id="test-sound-btn" style="width: auto; flex-grow: 1;">
-                    <i class="fas fa-volume-up"></i> Play Test Sound
-                </button>
+                <button type="button" class="cta-button" id="reset-chat-btn" style="flex-grow: 1;"><i class="fas fa-trash-alt"></i> Reset Pesan</button>
+                <button type="button" class="cta-button" id="test-sound-btn" style="flex-grow: 1;"><i class="fas fa-volume-up"></i> Play Test Sound</button>
             </div>
         </section>
 
@@ -590,9 +581,8 @@
     </div>
 
     <script type="module">
-        // Import the functions you need from the SDKs you need
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.1.0/firebase-app.js";
-        import { getDatabase, ref, push, onChildAdded, remove, onValue, set } from "https://www.gstatic.com/firebasejs/9.1.0/firebase-database.js";
+        import { getDatabase, ref, push, onChildAdded, onValue, set } from "https://www.gstatic.com/firebasejs/9.1.0/firebase-database.js";
 
         // Your web app's Firebase configuration
         const firebaseConfig = {
@@ -605,14 +595,12 @@
           appId: "1:80689031398:web:24187cfc9840173021f327"
         };
     
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
         const chatRef = ref(database, 'messages');
         const alarmsRef = ref(database, 'alarms');
         const notificationStateRef = ref(database, 'notificationState');
 
-        // --- JavaScript Start ---
         document.addEventListener('DOMContentLoaded', () => {
             const digitalClock = document.getElementById('digital-clock');
             const dateDisplay = document.getElementById('date-display');
@@ -635,8 +623,6 @@
             let currentUtterance = null;
             let lastSpokenNotificationTimestamp = 0;
 
-            // --- Utility Functions ---
-            
             function updateClock() {
                 const now = new Date();
                 const hours = String(now.getHours()).padStart(2, '0');
@@ -675,18 +661,13 @@
             }
             getPrayerTimes();
 
-            // --- Text-to-Speech Functions ---
-            
             function speakText(text) {
                 if ('speechSynthesis' in window) {
                     window.speechSynthesis.cancel();
-                    
                     currentUtterance = new SpeechSynthesisUtterance(text);
                     currentUtterance.lang = 'id-ID';
-                    
                     currentUtterance.rate = 1;
                     currentUtterance.pitch = 1;
-
                     window.speechSynthesis.speak(currentUtterance);
                 }
             }
@@ -722,8 +703,6 @@
                     text: message,
                     type: type,
                     timestamp: Date.now()
-                }).catch(error => {
-                    console.error("Failed to set notification:", error);
                 });
             }
 
@@ -742,13 +721,13 @@
                             setNotification(voiceMessage, 'alarm');
                             alarm.initial_triggered = true;
                             alarm.last_triggered = now.getTime();
-                            saveAlarmsToFirebase();
+                            // No need to save to Firebase here, onValue listener handles it
                         }
                         
                         if (alarm.initial_triggered && (now.getTime() - alarm.last_triggered) >= (20 * 60 * 1000)) {
                             setNotification(voiceMessage, 'alarm');
                             alarm.last_triggered = now.getTime();
-                            saveAlarmsToFirebase();
+                            // No need to save to Firebase here, onValue listener handles it
                         }
                     }
                 });
@@ -781,21 +760,6 @@
                 checkAlarms();
                 checkPrayerTimes();
             }, 60000);
-
-            // --- Manajemen Data & UI ---
-
-            function saveAlarmsToFirebase() {
-                // Hapus data lama di Firebase dan simpan data baru
-                remove(alarmsRef).then(() => {
-                    if (alarms.length > 0) {
-                        const updatedData = {};
-                        alarms.forEach((alarm, index) => {
-                             updatedData[index] = alarm;
-                        });
-                        push(alarmsRef.parent, updatedData);
-                    }
-                });
-            }
 
             function renderAlarms() {
                 alarmList.innerHTML = '';
@@ -849,7 +813,7 @@
                 if (!button) return;
 
                 const alarmIndex = button.dataset.index;
-                const alarmObject = alarms.find((alarm, idx) => idx == alarmIndex);
+                const alarmObject = alarms[alarmIndex];
                 
                 if (button.classList.contains('delete-btn')) {
                     const alarmKey = Object.keys(alarms).find(key => alarms[key].id === alarmObject.id);
@@ -866,7 +830,6 @@
                 }
             });
             
-
             stopAlarmModalBtn.addEventListener('click', stopAlarm);
             
             modal.addEventListener('click', (e) => {
@@ -875,9 +838,6 @@
                 }
             });
 
-            // --- Firebase Chat Functionality ---
-
-            // Mengirim pesan ke Firebase
             chatForm.addEventListener('submit', (e) => {
                 e.preventDefault();
                 const messageText = chatInput.value.trim();
@@ -888,13 +848,10 @@
                     }).then(() => {
                         chatInput.value = '';
                         setNotification("Perhatian, ada pesan masuk. Tolong dibaca.", 'chat');
-                    }).catch(error => {
-                        console.error("Gagal mengirim pesan:", error);
                     });
                 }
             });
 
-            // Menerima pesan real-time dari Firebase
             onChildAdded(chatRef, (snapshot) => {
                 const message = snapshot.val();
                 const messageElement = document.createElement('div');
@@ -909,16 +866,10 @@
                 chatDisplay.scrollTop = chatDisplay.scrollHeight;
             });
 
-            // Reset Chat Button
             resetChatBtn.addEventListener('click', () => {
-                remove(chatRef).then(() => {
-                    chatDisplay.innerHTML = '';
-                }).catch(error => {
-                    console.error("Gagal mereset chat:", error);
-                });
+                remove(chatRef);
             });
 
-            // Menerima data alarm real-time dari Firebase
             onValue(alarmsRef, (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
@@ -929,8 +880,6 @@
                 renderAlarms();
             });
 
-            // --- New: Firebase Notification Listener ---
-            // Listen for changes in the notificationState node
             onValue(notificationStateRef, (snapshot) => {
                 const notification = snapshot.val();
                 if (notification && notification.timestamp > lastSpokenNotificationTimestamp) {
@@ -950,12 +899,10 @@
                 }
             });
 
-            // Enable audio/TTS on first user interaction
             testSoundBtn.addEventListener('click', () => {
                 speakText("Suara notifikasi berhasil diaktifkan.");
             });
         });
-        // --- JavaScript End ---
     </script>
 </body>
 </html>
