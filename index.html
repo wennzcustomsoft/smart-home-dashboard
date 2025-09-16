@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Home Dashboard - Futuristis</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- CSS Start --- */
+        :root {
+            --bg-color-primary: #0a0a1a;
+            --card-bg-color: #12122b;
+            --text-color-light: #e0e0f0;
+            --primary-accent: #00e6ff; /* Neon Blue */
+            --secondary-accent: #ff007b; /* Neon Pink */
+            --alarm-color: #ff4d4d; /* Neon Red */
+            --inner-shadow: inset 3px 3px 6px #080814, inset -3px -3px 6px #1c1c42;
+            --outer-shadow: 8px 8px 16px #080814, -8px -8px 16px #1c1c42;
+            --hover-effect: translateY(-5px);
+            --glow-effect: 0 0 10px var(--primary-accent), 0 0 20px var(--primary-accent), 0 0 30px var(--primary-accent);
+        }
+        
+        body {
+            background-color: var(--bg-color-primary);
+            color: var(--text-color-light);
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            text-shadow: 0 0 2px rgba(255, 255, 255, 0.5);
+            animation: background-pulse 10s infinite alternate;
+        }
+
+        @keyframes background-pulse {
+            0% {
+                background-color: var(--bg-color-primary);
+            }
+            100% {
+                background-color: #0d0d21;
+            }
+        }
+        
+        .dashboard-container {
+            width: 100%;
+            max-width: 1200px;
+            display: grid;
+            gap: 30px;
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-areas: 
+                "clock clock clock"
+                "alarm-control chat-column prayer-times"
+                "alarm-list alarm-list alarm-list";
+        }
+        
+        .clock-card {
+            grid-area: clock;
+        }
+
+        .alarm-control-section {
+            grid-area: alarm-control;
+        }
+
+        .prayer-times-section {
+            grid-area: prayer-times;
+        }
+
+        .active-alarms-section {
+            grid-area: alarm-list;
+        }
+
+        .chat-column {
+            grid-area: chat-column;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card {
+            background: var(--card-bg-color);
+            padding: 40px;
+            border-radius: 25px;
+            box-shadow: var(--outer-shadow);
+            border: 1px solid rgba(0, 230, 255, 0.2);
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        
+        .card:hover {
+            transform: var(--hover-effect);
+            box-shadow: var(--glow-effect), var(--outer-shadow);
+            border-color: var(--primary-accent);
+        }
+        
+        /* Digital Clock */
+        .digital-clock {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 6rem;
+            color: var(--secondary-accent);
+            text-align: center;
+            text-shadow: 0 0 15px var(--secondary-accent), 0 0 30px var(--secondary-accent);
+            letter-spacing: 5px;
+        }
+        
+        .date-display {
+            text-align: center;
+            font-size: 1.5rem;
+            color: #9999cc;
+            margin-top: -20px;
+        }
+        
+        /* Section Titles */
+        h2 {
+            color: var(--primary-accent);
+            text-shadow: 0 0 8px var(--primary-accent);
+            border-bottom: 2px solid var(--primary-accent);
+            padding-bottom: 15px;
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-weight: 600;
+        }
+        
+        /* Input Forms */
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .form-group label i {
+            margin-right: 10px;
+            color: var(--primary-accent);
+        }
+        
+        input[type="datetime-local"],
+        input[type="text"],
+        select {
+            width: 100%;
+            padding: 15px;
+            background-color: var(--card-bg-color);
+            border: 1px solid #333;
+            color: var(--text-color-light);
+            border-radius: 15px;
+            box-sizing: border-box;
+            font-size: 1.1rem;
+            box-shadow: var(--inner-shadow);
+            transition: box-shadow 0.3s ease;
+            margin-top: 5px;
+        }
+        
+        input[type="datetime-local"]:focus,
+        input[type="text"]:focus,
+        select:focus {
+            outline: none;
+            box-shadow: var(--glow-effect), var(--inner-shadow);
+            border-color: var(--primary-accent);
+        }
+        
+        .cta-button {
+            width: 100%;
+            background-color: var(--primary-accent);
+            color: var(--bg-color-primary);
+            border: none;
+            padding: 18px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            cursor: pointer;
+            border-radius: 15px;
+            box-shadow: 0 0 10px rgba(0, 230, 255, 0.5), var(--outer-shadow);
+            transition: all 0.3s ease;
+            margin-bottom: 15px;
+        }
+        
+        .cta-button:hover {
+            box-shadow: var(--glow-effect);
+            transform: scale(1.02);
+        }
+
+        .voice-settings {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 1px dashed #444;
+        }
+        .voice-settings .form-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .voice-settings .form-group label {
+            width: 30%;
+            margin-bottom: 0;
+        }
+        .voice-settings .form-group input[type="range"] {
+            width: 65%;
+            padding: 0;
+            box-shadow: none;
+        }
+        
+        /* Alarm List */
+        #alarm-list li {
+            background-color: var(--card-bg-color);
+            padding: 20px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--outer-shadow);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        #alarm-list li:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 15px var(--primary-accent);
+        }
+
+        #alarm-list li.completed {
+            background-color: #181830;
+            opacity: 0.6;
+            text-decoration: line-through;
+            border-color: #444;
+        }
+
+        .alarm-info h3 {
+            margin: 0 0 8px;
+            color: var(--primary-accent);
+            font-size: 1.3rem;
+        }
+        
+        .alarm-info p {
+            margin: 0;
+            color: #ccc;
+            font-size: 1rem;
+        }
+        
+        .alarm-actions button {
+            background-color: var(--card-bg-color);
+            color: var(--text-color-light);
+            border: none;
+            padding: 12px 18px;
+            font-size: 1rem;
+            cursor: pointer;
+            border-radius: 10px;
+            box-shadow: var(--outer-shadow);
+            transition: all 0.3s ease;
+            margin-left: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .alarm-actions button:hover {
+            box-shadow: var(--inner-shadow);
+            color: var(--primary-accent);
+        }
+
+        .alarm-actions .complete-btn {
+            color: var(--primary-accent);
+        }
+
+        .alarm-actions .delete-btn {
+            color: var(--alarm-color);
+        }
+        
+        /* Prayer Times */
+        #prayer-times-list div {
+            background-color: var(--card-bg-color);
+            padding: 15px 20px;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            font-weight: 400;
+            box-shadow: var(--inner-shadow);
+            border: 1px solid rgba(0, 230, 255, 0.1);
+        }
+        
+        #prayer-times-list span:first-child {
+            font-weight: 600;
+            color: var(--primary-accent);
+        }
+        
+        /* Alarm Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+        
+        .modal-content {
+            background-color: var(--card-bg-color);
+            padding: 50px;
+            border-radius: 25px;
+            text-align: center;
+            max-width: 500px;
+            box-shadow: 0 0 30px var(--alarm-color), var(--outer-shadow);
+            border: 2px solid var(--alarm-color);
+        }
+        
+        #modal-text {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 30px;
+            color: var(--alarm-color);
+            text-shadow: 0 0 10px var(--alarm-color);
+        }
+        
+        .stop-btn {
+            background-color: var(--alarm-color);
+            color: white;
+            border: none;
+            padding: 18px 35px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            cursor: pointer;
+            border-radius: 15px;
+            box-shadow: var(--outer-shadow);
+            transition: all 0.3s ease;
+        }
+        
+        .stop-btn:hover {
+            box-shadow: 0 0 20px var(--alarm-color), var(--inner-shadow);
+            transform: scale(1.05);
+        }
+
+        /* --- Chat Column Styles --- */
+        .chat-display {
+            background-color: #0d0d21;
+            border-radius: 15px;
+            padding: 20px;
+            height: 300px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            box-shadow: var(--inner-shadow);
+            margin-bottom: 20px;
+        }
+
+        .chat-message {
+            background-color: #181830;
+            padding: 12px 18px;
+            border-radius: 20px;
+            word-wrap: break-word;
+            max-width: 85%;
+            align-self: flex-start; /* Default for incoming messages */
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.4);
+            font-size: 1.05rem;
+        }
+
+        .chat-message.sent {
+            align-self: flex-end; /* Align user's messages to the right */
+            margin-left: auto;
+            background-color: var(--primary-accent);
+            color: var(--bg-color-primary);
+        }
+        
+        .chat-form {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .chat-form input {
+            flex-grow: 1;
+        }
+
+        .chat-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        /* --- Responsive Design --- */
+        @media (max-width: 1024px) {
+            .dashboard-container {
+                grid-template-columns: 1fr 1fr;
+                grid-template-areas: 
+                    "clock clock"
+                    "alarm-control prayer-times"
+                    "chat-column chat-column"
+                    "alarm-list alarm-list";
+            }
+            .card {
+                padding: 30px;
+            }
+            .digital-clock {
+                font-size: 4rem;
+            }
+            h2 {
+                font-size: 1.5rem;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+            .dashboard-container {
+                grid-template-columns: 1fr;
+                gap: 20px;
+                grid-template-areas: 
+                    "clock"
+                    "alarm-control"
+                    "prayer-times"
+                    "chat-column"
+                    "alarm-list";
+            }
+            .card {
+                padding: 25px;
+            }
+            .digital-clock {
+                font-size: 3.5rem;
+            }
+            .date-display {
+                font-size: 1.2rem;
+            }
+            .voice-settings .form-group {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .voice-settings .form-group label,
+            .voice-settings .form-group input {
+                width: 100%;
+                margin-top: 5px;
+            }
+            .alarm-actions {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+            .alarm-actions button {
+                width: 100%;
+                margin: 0;
+                padding: 10px;
+                font-size: 0.9rem;
+            }
+        }
+        
+        /* --- TV Optimization (Layar Lebar & Jarak Jauh) --- */
+        @media (min-width: 1600px) {
+            body {
+                font-size: 1.2rem;
+            }
+            .digital-clock {
+                font-size: 8rem;
+            }
+            h2 {
+                font-size: 2rem;
+            }
+            .card {
+                padding: 60px;
+                border-radius: 40px;
+            }
+            .form-group label {
+                font-size: 1.2rem;
+            }
+            input[type="datetime-local"],
+            input[type="text"],
+            select {
+                font-size: 1.4rem;
+            }
+            .cta-button {
+                font-size: 1.5rem;
+            }
+            .chat-display {
+                height: 400px;
+            }
+            .chat-message {
+                font-size: 1.2rem;
+            }
+        }
+        /* --- CSS End --- */
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-container">
+        <header class="card clock-card">
+            <div class="digital-clock" id="digital-clock"></div>
+            <p class="date-display" id="date-display"></p>
+        </header>
+
+        <section class="alarm-control-section card">
+            <h2><i class="fas fa-bell"></i> Atur Alarm</h2>
+            <form id="alarm-form">
+                <div class="form-group">
+                    <label for="alarm-datetime"><i class="fas fa-calendar-alt"></i> Tanggal & Waktu:</label>
+                    <input type="datetime-local" id="alarm-datetime" required>
+                </div>
+                <div class="form-group">
+                    <label for="alarm-note">Catatan Pengingat:</label>
+                    <input type="text" id="alarm-note" placeholder="Contoh: Jadwal minum obat">
+                </div>
+                <button type="submit" class="cta-button"><i class="fas fa-plus"></i> Setel Alarm</button>
+            </form>
+            <div class="voice-settings">
+                <h2><i class="fas fa-sliders-h"></i> Pengaturan Suara</h2>
+                <div class="form-group">
+                    <label for="voice-select">Pilih Suara:</label>
+                    <select id="voice-select"></select>
+                </div>
+                <div class="form-group">
+                    <label for="rate">Kecepatan:</label>
+                    <input type="range" id="rate" min="0.5" max="2" value="1" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label for="pitch">Nada:</label>
+                    <input type="range" id="pitch" min="0" max="2" value="1" step="0.1">
+                </div>
+            </div>
+        </section>
+
+        <section class="prayer-times-section card">
+            <h2><i class="fas fa-mosque"></i> Jadwal Waktu Salat</h2>
+            <div id="prayer-times-list">
+                </div>
+        </section>
+
+        <section class="chat-column card">
+            <h2><i class="fas fa-comments"></i> Pesan Instan</h2>
+            <div class="chat-display" id="chat-display">
+                </div>
+            <form class="chat-form" id="chat-form">
+                <input type="text" id="chat-input" placeholder="Ketik pesan..." required>
+                <button type="submit" class="cta-button" style="width: auto; padding: 10px 15px;"><i class="fas fa-paper-plane"></i></button>
+            </form>
+            <div class="chat-actions">
+                <button type="button" class="cta-button test-audio-btn" id="reset-chat-btn" style="width: auto; flex-grow: 1;">
+                    <i class="fas fa-trash-alt"></i> Reset Pesan
+                </button>
+            </div>
+        </section>
+
+        <section class="active-alarms-section card">
+            <h2><i class="fas fa-list-ul"></i> Daftar Alarm Aktif</h2>
+            <ul id="alarm-list">
+                </ul>
+        </section>
+    </div>
+    
+    <div id="alarm-modal" class="modal">
+        <div class="modal-content">
+            <p id="modal-text"></p>
+            <button id="stop-alarm-modal" class="stop-btn"><i class="fas fa-power-off"></i> Hentikan Alarm</button>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.1.0/firebase-app.js";
+        import { getDatabase, ref, push, onChildAdded, remove } from "https://www.gstatic.com/firebasejs/9.1.0/firebase-database.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+          apiKey: "AIzaSyAP4QltMCp6jpEPgCJy-712N2MjtQX2zww",
+          authDomain: "smart-dashboard-aa5c5.firebaseapp.com",
+          databaseURL: "https://smart-dashboard-aa5c5-default-rtdb.firebaseio.com",
+          projectId: "smart-dashboard-aa5c5",
+          storageBucket: "smart-dashboard-aa5c5.firebasestorage.app",
+          messagingSenderId: "80689031398",
+          appId: "1:80689031398:web:24187cfc9840173021f327"
+        };
+    
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        const chatRef = ref(database, 'messages');
+
+        // --- JavaScript Start ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const digitalClock = document.getElementById('digital-clock');
+            const dateDisplay = document.getElementById('date-display');
+            const alarmForm = document.getElementById('alarm-form');
+            const alarmList = document.getElementById('alarm-list');
+            const modal = document.getElementById('alarm-modal');
+            const modalText = document.getElementById('modal-text');
+            const stopAlarmModalBtn = document.getElementById('stop-alarm-modal');
+            const voiceSelect = document.getElementById('voice-select');
+            const rateInput = document.getElementById('rate');
+            const pitchInput = document.getElementById('pitch');
+            const chatForm = document.getElementById('chat-form');
+            const chatInput = document.getElementById('chat-input');
+            const chatDisplay = document.getElementById('chat-display');
+            const resetChatBtn = document.getElementById('reset-chat-btn');
+            
+            let alarms = JSON.parse(localStorage.getItem('alarms')) || [];
+            let prayerTimes = {};
+            let isSpeaking = false;
+            let currentAlarmInterval = null;
+            let lastNotifiedPrayer = null;
+            let currentUtterance = null;
+            let currentUtteranceCallback = null;
+            let isChatNotificationPlaying = false;
+
+            // --- Utility Functions ---
+            
+            function updateClock() {
+                const now = new Date();
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                const seconds = String(now.getSeconds()).padStart(2, '0');
+                digitalClock.textContent = `${hours}:${minutes}:${seconds}`;
+
+                const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+                dateDisplay.textContent = now.toLocaleDateString('id-ID', dateOptions);
+            }
+            setInterval(updateClock, 1000);
+            updateClock();
+
+            async function getPrayerTimes() {
+                const prayerTimesList = document.getElementById('prayer-times-list');
+                prayerTimesList.innerHTML = '<div><i class="fas fa-spinner fa-spin"></i> Mengambil data jadwal salat...</div>';
+
+                const url = `https://api.aladhan.com/v1/timingsByCity?city=Jakarta&country=Indonesia&method=8`;
+
+                try {
+                    const response = await fetch(url);
+                    const data = await response.json();
+                    prayerTimes = data.data.timings;
+                    
+                    prayerTimesList.innerHTML = `
+                        <div><span>Subuh</span><span>${prayerTimes.Fajr}</span></div>
+                        <div><span>Dzuhur</span><span>${prayerTimes.Dhuhr}</span></div>
+                        <div><span>Ashar</span><span>${prayerTimes.Asr}</span></div>
+                        <div><span>Maghrib</span><span>${prayerTimes.Maghrib}</span></div>
+                        <div><span>Isya</span><span>${prayerTimes.Isha}</span></div>
+                    `;
+                } catch (error) {
+                    prayerTimesList.innerHTML = '<div>Gagal memuat jadwal salat.</div>';
+                    console.error('Gagal mengambil data jadwal salat:', error);
+                }
+            }
+            getPrayerTimes();
+
+            // --- Text-to-Speech Functions ---
+
+            let voices = [];
+            function populateVoiceList() {
+                voices = window.speechSynthesis.getVoices();
+                voiceSelect.innerHTML = '';
+                let defaultIndonesianVoice = null;
+                
+                voices.forEach(voice => {
+                    if (voice.lang.startsWith('id-')) {
+                        const option = new Option(voice.name, voice.name);
+                        voiceSelect.add(option);
+                        if (voice.default) {
+                            defaultIndonesianVoice = voice.name;
+                        }
+                    }
+                });
+                
+                if (defaultIndonesianVoice) {
+                    voiceSelect.value = defaultIndonesianVoice;
+                }
+                
+                if (voiceSelect.options.length === 0) {
+                    voices.forEach(voice => {
+                         const option = new Option(`${voice.name} (${voice.lang})`, voice.name);
+                         voiceSelect.add(option);
+                    });
+                }
+            }
+
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.onvoiceschanged = populateVoiceList;
+                populateVoiceList();
+            } else {
+                voiceSelect.style.display = 'none';
+                document.querySelector('.voice-settings').style.display = 'none';
+            }
+
+            function speakText(text, callback) {
+                if ('speechSynthesis' in window) {
+                    window.speechSynthesis.cancel();
+                    
+                    currentUtterance = new SpeechSynthesisUtterance(text);
+                    currentUtterance.lang = 'id-ID';
+                    
+                    const selectedVoice = voices.find(voice => voice.name === voiceSelect.value);
+                    if (selectedVoice) {
+                        currentUtterance.voice = selectedVoice;
+                    }
+
+                    currentUtterance.rate = parseFloat(rateInput.value);
+                    currentUtterance.pitch = parseFloat(pitchInput.value);
+
+                    currentUtterance.onend = () => {
+                        currentUtterance = null;
+                        if (callback) callback();
+                    };
+
+                    window.speechSynthesis.speak(currentUtterance);
+                }
+            }
+
+            function triggerAlarm(messages) {
+                if (isSpeaking) {
+                    return;
+                }
+                
+                isSpeaking = true;
+                let repeatCount = 0;
+                const maxRepeats = 3;
+
+                function speakSequence(index = 0) {
+                    if (index >= messages.length) {
+                        repeatCount++;
+                        if (repeatCount < maxRepeats) {
+                            setTimeout(() => speakSequence(0), 1000);
+                        } else {
+                            isSpeaking = false;
+                        }
+                        return;
+                    }
+
+                    speakText(messages[index], () => {
+                        setTimeout(() => speakSequence(index + 1), 1000);
+                    });
+                }
+                
+                speakSequence();
+
+                if (currentAlarmInterval) {
+                    clearInterval(currentAlarmInterval);
+                }
+
+                currentAlarmInterval = setInterval(() => {
+                    if (!isSpeaking) {
+                        isSpeaking = true;
+                        repeatCount = 0;
+                        speakSequence();
+                    }
+                }, 60000);
+            }
+            
+            function showAlarmModal(displayText, voiceMessages) {
+                modalText.textContent = displayText;
+                modal.style.display = 'flex';
+                triggerAlarm(voiceMessages);
+            }
+
+            function stopAlarm() {
+                if (currentAlarmInterval) {
+                    clearInterval(currentAlarmInterval);
+                }
+                if (window.speechSynthesis) {
+                    window.speechSynthesis.cancel();
+                }
+                modal.style.display = 'none';
+                currentAlarmInterval = null;
+                isSpeaking = false;
+                currentUtterance = null;
+            }
+
+            function getSpokenTime(date) {
+                const hours = date.getHours();
+                const minutes = date.getMinutes();
+
+                if (minutes === 0) {
+                    return `pukul ${hours} tepat`;
+                } else if (minutes < 10) {
+                    return `pukul ${hours} lewat nol ${minutes} menit`;
+                } else {
+                    return `pukul ${hours} ${minutes} menit`;
+                }
+            }
+
+            function checkAlarms() {
+                const now = new Date();
+                const nowMinutes = Math.floor(now.getTime() / (60 * 1000));
+                
+                alarms.forEach(alarm => {
+                    if (!alarm.completed) {
+                        const alarmTime = new Date(alarm.time);
+                        const alarmTimeMinutes = Math.floor(alarmTime.getTime() / (60 * 1000));
+                        
+                        const spokenTime = getSpokenTime(alarmTime);
+
+                        const voiceMessages = [
+                            `Sekarang ${spokenTime}.`,
+                            `Waktunya ${alarm.note || 'Pengingat tanpa catatan.'}.`
+                        ];
+                        const displayMessage = `Alarm: ${alarm.note || 'Tidak ada catatan'}`;
+
+                        if (!alarm.initial_triggered && nowMinutes === alarmTimeMinutes) {
+                            showAlarmModal(displayMessage, voiceMessages);
+                            alarm.initial_triggered = true;
+                            alarm.last_triggered = now.getTime();
+                            saveAlarms();
+                        }
+
+                        if (alarm.initial_triggered && (now.getTime() - alarm.last_triggered) >= (20 * 60 * 1000)) {
+                            showAlarmModal(displayMessage, voiceMessages);
+                            alarm.last_triggered = now.getTime();
+                            saveAlarms();
+                        }
+                    }
+                });
+            }
+            
+            function checkPrayerTimes() {
+                if (!prayerTimes.Fajr) return;
+                
+                const now = new Date();
+                const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+                
+                const prayers = {
+                    "Subuh": prayerTimes.Fajr,
+                    "Dzuhur": prayerTimes.Dhuhr,
+                    "Ashar": prayerTimes.Asr,
+                    "Maghrib": prayerTimes.Maghrib,
+                    "Isya": prayerTimes.Isha
+                };
+
+                for (const prayer in prayers) {
+                    if (currentTime === prayers[prayer] && lastNotifiedPrayer !== prayer) {
+                        const noteText = `Assalamualaikum, sekarang jam ${currentTime}, segera lakukan shalat ${prayer}, jangan ditunda lagi ya.`;
+                        const displayMessage = `Waktunya Shalat ${prayer}`;
+                        showAlarmModal(displayMessage, [noteText]);
+                        lastNotifiedPrayer = prayer;
+                    }
+                }
+            }
+
+            setInterval(() => {
+                checkAlarms();
+                checkPrayerTimes();
+            }, 60000);
+
+            // --- Data & UI Management ---
+
+            function saveAlarms() {
+                localStorage.setItem('alarms', JSON.stringify(alarms));
+            }
+
+            function renderAlarms() {
+                alarmList.innerHTML = '';
+                alarms.sort((a, b) => new Date(a.time) - new Date(b.time));
+
+                alarms.forEach((alarm, index) => {
+                    const li = document.createElement('li');
+                    if (alarm.completed) {
+                        li.classList.add('completed');
+                    }
+                    const alarmTime = new Date(alarm.time).toLocaleString('id-ID', {
+                        year: 'numeric', month: 'long', day: 'numeric',
+                        hour: '2-digit', minute: '2-digit'
+                    });
+                    li.innerHTML = `
+                        <div class="alarm-info">
+                            <h3>${alarmTime}</h3>
+                            <p>${alarm.note || 'Tidak ada catatan'}</p>
+                        </div>
+                        <div class="alarm-actions">
+                            <button class="test-btn" data-index="${index}"><i class="fas fa-volume-up"></i></button>
+                            ${!alarm.completed ? `<button class="complete-btn" data-index="${index}"><i class="fas fa-check"></i> Selesai</button>` : ''}
+                            <button class="delete-btn" data-index="${index}"><i class="fas fa-trash-alt"></i></button>
+                        </div>
+                    `;
+                    alarmList.appendChild(li);
+                });
+            }
+
+            // --- Event Listeners ---
+
+            alarmForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const alarmDateTime = document.getElementById('alarm-datetime').value;
+                const alarmNote = document.getElementById('alarm-note').value;
+
+                if (alarmDateTime) {
+                    const newAlarm = {
+                        id: Date.now(),
+                        time: alarmDateTime,
+                        note: alarmNote || 'Pengingat tanpa catatan',
+                        initial_triggered: false,
+                        last_triggered: null,
+                        completed: false
+                    };
+                    alarms.push(newAlarm);
+                    saveAlarms();
+                    renderAlarms();
+                    alarmForm.reset();
+                }
+            });
+
+            alarmList.addEventListener('click', (e) => {
+                const button = e.target.closest('button');
+                if (!button) return;
+
+                const index = button.dataset.index;
+                if (button.classList.contains('delete-btn')) {
+                    alarms.splice(index, 1);
+                    saveAlarms();
+                    renderAlarms();
+                } else if (button.classList.contains('complete-btn')) {
+                    alarms[index].completed = true;
+                    saveAlarms();
+                    renderAlarms();
+                } else if (button.classList.contains('test-btn')) {
+                    const alarm = alarms[index];
+                    const alarmTime = new Date(alarm.time);
+                    const spokenTime = getSpokenTime(alarmTime);
+                    const voiceMessages = [
+                        `Sekarang ${spokenTime}.`,
+                        `Waktunya ${alarm.note || 'Pengingat tanpa catatan.'}.`
+                    ];
+                    triggerAlarm(voiceMessages);
+                }
+            });
+
+            stopAlarmModalBtn.addEventListener('click', stopAlarm);
+            
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    stopAlarm();
+                }
+            });
+
+            // --- Firebase Chat Functionality ---
+
+            // Mengirim pesan ke Firebase
+            chatForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const messageText = chatInput.value.trim();
+                if (messageText !== '') {
+                    push(chatRef, {
+                        text: messageText,
+                        timestamp: Date.now()
+                    }).then(() => {
+                        chatInput.value = ''; // Kosongkan input setelah berhasil
+                        if (!isChatNotificationPlaying) {
+                            isChatNotificationPlaying = true;
+                            speakText("Perhatian, ada pesan masuk. Tolong dibaca.", () => {
+                                isChatNotificationPlaying = false;
+                            });
+                        }
+                    }).catch(error => {
+                        console.error("Gagal mengirim pesan:", error);
+                    });
+                }
+            });
+
+            // Menerima pesan real-time dari Firebase
+            onChildAdded(chatRef, (snapshot) => {
+                const message = snapshot.val();
+                const messageElement = document.createElement('div');
+                messageElement.classList.add('chat-message');
+                messageElement.textContent = message.text;
+
+                if (message.timestamp > Date.now() - 5000) {
+                     messageElement.classList.add('sent');
+                }
+
+                chatDisplay.appendChild(messageElement);
+                chatDisplay.scrollTop = chatDisplay.scrollHeight;
+            });
+
+            // Reset Chat Button
+            resetChatBtn.addEventListener('click', () => {
+                remove(chatRef).then(() => {
+                    chatDisplay.innerHTML = '';
+                }).catch(error => {
+                    console.error("Gagal mereset chat:", error);
+                });
+            });
+
+            renderAlarms();
+        });
+        // --- JavaScript End ---
+    </script>
+</body>
+</html>
