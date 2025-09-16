@@ -569,6 +569,9 @@
                 <button type="button" class="cta-button test-audio-btn" id="reset-chat-btn" style="width: auto; flex-grow: 1;">
                     <i class="fas fa-trash-alt"></i> Reset Pesan
                 </button>
+                <button type="button" class="cta-button test-audio-btn" id="test-sound-btn" style="width: auto; flex-grow: 1;">
+                    <i class="fas fa-volume-up"></i> Play Test Sound
+                </button>
             </div>
         </section>
 
@@ -589,7 +592,7 @@
     <script type="module">
         // Import the functions you need from the SDKs you need
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.1.0/firebase-app.js";
-        import { getDatabase, ref, push, onChildAdded, remove, onValue, update } from "https://www.gstatic.com/firebasejs/9.1.0/firebase-database.js";
+        import { getDatabase, ref, push, onChildAdded, remove, onValue, set } from "https://www.gstatic.com/firebasejs/9.1.0/firebase-database.js";
 
         // Your web app's Firebase configuration
         const firebaseConfig = {
@@ -607,7 +610,7 @@
         const database = getDatabase(app);
         const chatRef = ref(database, 'messages');
         const alarmsRef = ref(database, 'alarms');
-        const notificationsRef = ref(database, 'notifications');
+        const notificationStateRef = ref(database, 'notificationState');
 
         // --- JavaScript Start ---
         document.addEventListener('DOMContentLoaded', () => {
@@ -622,6 +625,7 @@
             const chatInput = document.getElementById('chat-input');
             const chatDisplay = document.getElementById('chat-display');
             const resetChatBtn = document.getElementById('reset-chat-btn');
+            const testSoundBtn = document.getElementById('test-sound-btn');
             
             let alarms = [];
             let prayerTimes = {};
@@ -629,8 +633,7 @@
             let currentAlarmInterval = null;
             let lastNotifiedPrayer = null;
             let currentUtterance = null;
-            let isChatNotificationPlaying = false;
-            let lastSpokenNotification = null;
+            let lastSpokenNotificationTimestamp = 0;
 
             // --- Utility Functions ---
             
@@ -684,71 +687,21 @@
                     currentUtterance.rate = 1;
                     currentUtterance.pitch = 1;
 
-                    currentUtterance.onend = () => {
-                        currentUtterance = null;
-                    };
-
                     window.speechSynthesis.speak(currentUtterance);
                 }
             }
 
-            function triggerAlarm(messages) {
-                if (isSpeaking) {
-                    return;
-                }
-                
-                isSpeaking = true;
-                let repeatCount = 0;
-                const maxRepeats = 3;
-
-                function speakSequence(index = 0) {
-                    if (index >= messages.length) {
-                        repeatCount++;
-                        if (repeatCount < maxRepeats) {
-                            setTimeout(() => speakSequence(0), 1000);
-                        } else {
-                            isSpeaking = false;
-                        }
-                        return;
-                    }
-
-                    speakText(messages[index], () => {
-                        setTimeout(() => speakSequence(index + 1), 1000);
-                    });
-                }
-                
-                speakSequence();
-
-                if (currentAlarmInterval) {
-                    clearInterval(currentAlarmInterval);
-                }
-
-                currentAlarmInterval = setInterval(() => {
-                    if (!isSpeaking) {
-                        isSpeaking = true;
-                        repeatCount = 0;
-                        speakSequence();
-                    }
-                }, 60000);
-            }
-            
             function showAlarmModal(displayText, voiceMessages) {
                 modalText.textContent = displayText;
                 modal.style.display = 'flex';
-                triggerAlarm(voiceMessages);
+                speakText(voiceMessages[0]);
             }
 
             function stopAlarm() {
-                if (currentAlarmInterval) {
-                    clearInterval(currentAlarmInterval);
-                }
                 if (window.speechSynthesis) {
                     window.speechSynthesis.cancel();
                 }
                 modal.style.display = 'none';
-                currentAlarmInterval = null;
-                isSpeaking = false;
-                currentUtterance = null;
             }
 
             function getSpokenTime(date) {
@@ -764,13 +717,13 @@
                 }
             }
 
-            function sendNotification(message, type) {
-                push(notificationsRef, {
+            function setNotification(message, type) {
+                set(notificationStateRef, {
                     text: message,
                     type: type,
                     timestamp: Date.now()
                 }).catch(error => {
-                    console.error("Failed to send notification:", error);
+                    console.error("Failed to set notification:", error);
                 });
             }
 
@@ -786,14 +739,14 @@
                         const voiceMessage = `Sekarang ${getSpokenTime(alarmTime)}. Waktunya ${alarm.note || 'Pengingat tanpa catatan.'}.`;
                         
                         if (!alarm.initial_triggered && nowMinutes === alarmTimeMinutes) {
-                            sendNotification(voiceMessage, 'alarm');
+                            setNotification(voiceMessage, 'alarm');
                             alarm.initial_triggered = true;
                             alarm.last_triggered = now.getTime();
                             saveAlarmsToFirebase();
                         }
                         
                         if (alarm.initial_triggered && (now.getTime() - alarm.last_triggered) >= (20 * 60 * 1000)) {
-                            sendNotification(voiceMessage, 'alarm');
+                            setNotification(voiceMessage, 'alarm');
                             alarm.last_triggered = now.getTime();
                             saveAlarmsToFirebase();
                         }
@@ -818,7 +771,7 @@
                 for (const prayer in prayers) {
                     if (currentTime === prayers[prayer] && lastNotifiedPrayer !== prayer) {
                         const noteText = `Assalamualaikum, sekarang jam ${currentTime}, segera lakukan shalat ${prayer}, jangan ditunda lagi ya.`;
-                        sendNotification(noteText, 'prayer');
+                        setNotification(noteText, 'prayer');
                         lastNotifiedPrayer = prayer;
                     }
                 }
@@ -832,6 +785,7 @@
             // --- Manajemen Data & UI ---
 
             function saveAlarmsToFirebase() {
+                // Hapus data lama di Firebase dan simpan data baru
                 remove(alarmsRef).then(() => {
                     if (alarms.length > 0) {
                         const updatedData = {};
@@ -895,7 +849,7 @@
                 if (!button) return;
 
                 const alarmIndex = button.dataset.index;
-                const alarmObject = alarms[alarmIndex];
+                const alarmObject = alarms.find((alarm, idx) => idx == alarmIndex);
                 
                 if (button.classList.contains('delete-btn')) {
                     const alarmKey = Object.keys(alarms).find(key => alarms[key].id === alarmObject.id);
@@ -908,7 +862,7 @@
                 } else if (button.classList.contains('test-btn')) {
                     const spokenTime = getSpokenTime(new Date(alarmObject.time));
                     const voiceMessage = `Sekarang ${spokenTime}. Waktunya ${alarmObject.note || 'Pengingat tanpa catatan.'}.`;
-                    sendNotification(voiceMessage, 'test');
+                    setNotification(voiceMessage, 'test');
                 }
             });
             
@@ -933,7 +887,7 @@
                         timestamp: Date.now()
                     }).then(() => {
                         chatInput.value = '';
-                        sendNotification("Perhatian, ada pesan masuk. Tolong dibaca.", 'chat');
+                        setNotification("Perhatian, ada pesan masuk. Tolong dibaca.", 'chat');
                     }).catch(error => {
                         console.error("Gagal mengirim pesan:", error);
                     });
@@ -968,40 +922,37 @@
             onValue(alarmsRef, (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
-                    alarms = Object.entries(data).map(([key, value]) => ({...value, key}));
+                    alarms = Object.values(data);
                 } else {
                     alarms = [];
                 }
                 renderAlarms();
             });
 
-            // --- Firebase Notification Listener ---
-            onChildAdded(notificationsRef, (snapshot) => {
+            // --- New: Firebase Notification Listener ---
+            // Listen for changes in the notificationState node
+            onValue(notificationStateRef, (snapshot) => {
                 const notification = snapshot.val();
-                const notificationKey = snapshot.key;
-
-                if (lastSpokenNotification === notification.text) {
-                     remove(ref(database, `notifications/${notificationKey}`));
-                     return;
-                }
-                
-                if (notification.timestamp > Date.now() - 5000) {
-                    let modalMessage = "";
-                    if (notification.type === 'chat') {
-                        modalMessage = "Pesan masuk!";
-                    } else if (notification.type === 'alarm' || notification.type === 'test') {
-                        modalMessage = "Alarm Berbunyi!";
-                    } else if (notification.type === 'prayer') {
-                        modalMessage = "Waktunya Shalat!";
-                    }
+                if (notification && notification.timestamp > lastSpokenNotificationTimestamp) {
+                    const modalMessage = (() => {
+                        switch (notification.type) {
+                            case 'chat': return "Pesan masuk!";
+                            case 'alarm': return "Alarm Berbunyi!";
+                            case 'prayer': return "Waktunya Shalat!";
+                            default: return "Notifikasi Baru!";
+                        }
+                    })();
                     
                     modalText.textContent = modalMessage;
                     modal.style.display = 'flex';
                     speakText(notification.text);
-                    lastSpokenNotification = notification.text;
+                    lastSpokenNotificationTimestamp = notification.timestamp;
                 }
-                
-                remove(ref(database, `notifications/${notificationKey}`));
+            });
+
+            // Enable audio/TTS on first user interaction
+            testSoundBtn.addEventListener('click', () => {
+                speakText("Suara notifikasi berhasil diaktifkan.");
             });
         });
         // --- JavaScript End ---
