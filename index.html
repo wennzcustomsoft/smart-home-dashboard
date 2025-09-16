@@ -35,6 +35,7 @@
             padding: 20px;
             text-shadow: 0 0 2px rgba(255, 255, 255, 0.5);
             animation: background-pulse 10s infinite alternate;
+            overflow-x: hidden; /* Fix horizontal swipe on mobile */
         }
 
         @keyframes background-pulse {
@@ -56,6 +57,7 @@
                 "clock clock clock"
                 "alarm-control chat-column prayer-times"
                 "alarm-list alarm-list alarm-list";
+            padding: 0 20px;
         }
 
         .clock-container {
@@ -112,7 +114,7 @@
         
         .card:hover {
             transform: var(--hover-effect);
-            box-shadow: var(--glow-effect), var(--outer-shadow);
+            box-shadow: var(--outer-shadow); /* Glow effect removed on hover */
             border-color: var(--primary-accent);
         }
         
@@ -163,9 +165,7 @@
             color: var(--primary-accent);
         }
         
-        input[type="datetime-local"],
-        input[type="text"],
-        select {
+        input[type="text"] {
             width: 100%;
             padding: 15px;
             background-color: var(--card-bg-color);
@@ -179,9 +179,7 @@
             margin-top: 5px;
         }
         
-        input[type="datetime-local"]:focus,
-        input[type="text"]:focus,
-        select:focus {
+        input[type="text"]:focus {
             outline: none;
             box-shadow: var(--glow-effect), var(--inner-shadow);
             border-color: var(--primary-accent);
@@ -201,6 +199,7 @@
             cursor: pointer;
             box-shadow: var(--inner-shadow);
             transition: box-shadow 0.3s ease;
+            margin-top: 5px;
         }
         .datetime-input-button:hover {
             box-shadow: var(--glow-effect), var(--inner-shadow);
@@ -214,6 +213,7 @@
             position: absolute;
             opacity: 0;
             pointer-events: none;
+            left: -9999px; /* Hide completely */
         }
         
         .cta-button {
@@ -232,7 +232,7 @@
         }
         
         .cta-button:hover {
-            box-shadow: var(--glow-effect), var(--outer-shadow);
+            box-shadow: var(--outer-shadow); /* Glow effect removed on hover */
             transform: scale(1.02);
         }
 
@@ -256,7 +256,7 @@
         
         #alarm-list li:hover {
             transform: var(--hover-effect);
-            box-shadow: var(--glow-effect), var(--outer-shadow);
+            box-shadow: var(--outer-shadow); /* Glow effect removed on hover */
             border-color: var(--primary-accent);
         }
 
@@ -398,6 +398,11 @@
             padding: 10px 15px;
             width: auto;
             font-size: 1rem;
+            box-shadow: var(--outer-shadow); /* Added shadow back */
+        }
+        .chat-actions .cta-button:hover {
+             box-shadow: var(--outer-shadow);
+             transform: translateY(-2px);
         }
 
         /* --- Perubahan untuk Pesan Instan --- */
@@ -410,15 +415,12 @@
             align-self: flex-start;
             margin-left: 0;
             box-shadow: none;
+            color: var(--text-color-light); /* Default color for incoming */
         }
         .chat-message.sent {
             align-self: flex-end;
             margin-left: auto;
-            color: var(--primary-accent);
-        }
-        
-        .chat-message:not(.sent) {
-            color: var(--text-color-light);
+            color: var(--primary-accent); /* Accent color for sent messages */
         }
         
         .chat-form {
@@ -430,8 +432,28 @@
         }
         .chat-form .cta-button {
             width: auto;
-            padding: 12px 18px;
+            padding: 15px 20px; /* Made button bigger */
             font-size: 1.2rem;
+            box-shadow: var(--outer-shadow); /* Added shadow back */
+        }
+        .chat-form .cta-button:hover {
+            box-shadow: var(--outer-shadow);
+            transform: translateY(-2px);
+        }
+
+        /* Banner Placeholder */
+        .banner-placeholder {
+            min-height: 200px;
+            background-color: var(--card-bg-color);
+            border-radius: 25px;
+            box-shadow: var(--outer-shadow);
+            border: 1px dashed var(--primary-accent);
+            grid-area: banner;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--primary-accent);
+            text-align: center;
         }
 
         /* --- Responsive Design --- */
@@ -456,16 +478,19 @@
             h2 {
                 font-size: 1.5rem;
             }
+            .banner-placeholder {
+                display: none; /* Hide banner on smaller screens */
+            }
         }
         
         @media (max-width: 768px) {
             body {
-                padding: 15px;
+                padding: 0;
             }
             .dashboard-container {
                 grid-template-columns: 1fr;
                 gap: 20px;
-                padding: 0 15px; /* Added padding for mobile */
+                padding: 15px; /* Added padding for mobile */
                 grid-template-areas: 
                     "clock"
                     "alarm-control"
@@ -502,8 +527,11 @@
                 font-size: 0.9rem;
             }
             .chat-form .cta-button {
-                padding: 10px 15px;
+                padding: 12px 18px;
                 font-size: 1rem;
+            }
+            .banner-placeholder {
+                display: none;
             }
         }
         
@@ -525,9 +553,7 @@
             .form-group label {
                 font-size: 1.2rem;
             }
-            input[type="datetime-local"],
-            input[type="text"],
-            select {
+            input[type="text"] {
                 font-size: 1.4rem;
             }
             .cta-button {
@@ -603,7 +629,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.1.0/firebase-app.js";
-        import { getDatabase, ref, push, onChildAdded, onValue, set, remove, update } from "https://www.gstatic.com/firebasejs/9.1.0/firebase-database.js";
+        import { getDatabase, ref, push, onChildAdded, onValue, remove, update, set } from "https://www.gstatic.com/firebasejs/9.1.0/firebase-database.js";
 
         const firebaseConfig = {
           apiKey: "AIzaSyAP4QltMCp6jpEPgCJy-712N2MjtQX2zww",
@@ -639,12 +665,11 @@
             
             let alarms = [];
             let prayerTimes = {};
-            let isSpeaking = false;
             let lastNotifiedPrayer = null;
             let lastSpokenNotificationTimestamp = localStorage.getItem('lastSpokenNotificationTimestamp') || 0;
 
             alarmDatetimeBtn.addEventListener('click', () => {
-                alarmDatetimeInput.click();
+                alarmDatetimeInput.showPicker();
             });
 
             alarmDatetimeInput.addEventListener('change', () => {
@@ -746,13 +771,13 @@
                             setNotification(voiceMessage, 'alarm');
                             alarm.initial_triggered = true;
                             alarm.last_triggered = now.getTime();
-                            update(ref(database, `alarms/${Object.keys(alarms).find(key => alarms[key].id === alarm.id)}`), alarm);
+                            update(ref(database, `alarms/${alarm.key}`), alarm);
                         }
                         
                         if (alarm.initial_triggered && (now.getTime() - alarm.last_triggered) >= (20 * 60 * 1000)) {
                             setNotification(voiceMessage, 'alarm');
                             alarm.last_triggered = now.getTime();
-                            update(ref(database, `alarms/${Object.keys(alarms).find(key => alarms[key].id === alarm.id)}`), alarm);
+                            update(ref(database, `alarms/${alarm.key}`), alarm);
                         }
                     }
                 });
