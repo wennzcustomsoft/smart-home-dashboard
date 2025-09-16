@@ -20,7 +20,7 @@
             --inner-shadow: inset 3px 3px 6px #080814, inset -3px -3px 6px #1c1c42;
             --outer-shadow: 8px 8px 16px #080814, -8px -8px 16px #1c1c42;
             --hover-effect: translateY(-3px);
-            --glow-effect: 0 0 8px var(--primary-accent), 0 0 16px var(--primary-accent), 0 0 24px var(--primary-accent);
+            --glow-effect: 0 0 5px var(--primary-accent), 0 0 10px var(--primary-accent), 0 0 15px var(--primary-accent);
         }
         
         body {
@@ -119,18 +119,19 @@
         /* Digital Clock */
         .digital-clock {
             font-family: 'Orbitron', sans-serif;
-            font-size: 4rem;
+            font-size: 3rem;
             color: var(--secondary-accent);
             text-align: center;
             text-shadow: 0 0 15px var(--secondary-accent), 0 0 30px var(--secondary-accent);
-            letter-spacing: 5px;
+            letter-spacing: 2px;
+            font-variant-numeric: tabular-nums; /* Fix size change issue */
         }
         
         .date-display {
             text-align: center;
-            font-size: 1.5rem;
+            font-size: 1.2rem;
             color: #9999cc;
-            margin-top: -20px;
+            margin-top: 10px;
         }
         
         /* Section Titles */
@@ -185,6 +186,35 @@
             box-shadow: var(--glow-effect), var(--inner-shadow);
             border-color: var(--primary-accent);
         }
+
+        /* Tombol Alarm Input */
+        .datetime-input-button {
+            width: 100%;
+            padding: 15px;
+            background-color: var(--card-bg-color);
+            border: 1px solid #333;
+            color: var(--text-color-light);
+            border-radius: 15px;
+            box-sizing: border-box;
+            font-size: 1.1rem;
+            text-align: left;
+            cursor: pointer;
+            box-shadow: var(--inner-shadow);
+            transition: box-shadow 0.3s ease;
+        }
+        .datetime-input-button:hover {
+            box-shadow: var(--glow-effect), var(--inner-shadow);
+            border-color: var(--primary-accent);
+        }
+        .datetime-input-button i {
+            margin-right: 10px;
+            color: var(--primary-accent);
+        }
+        .hidden-input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
         
         .cta-button {
             width: 100%;
@@ -202,7 +232,7 @@
         }
         
         .cta-button:hover {
-            box-shadow: var(--glow-effect);
+            box-shadow: var(--glow-effect), var(--outer-shadow);
             transform: scale(1.02);
         }
 
@@ -225,8 +255,9 @@
         }
         
         #alarm-list li:hover {
-            transform: scale(1.02);
-            box-shadow: 0 0 15px var(--primary-accent);
+            transform: var(--hover-effect);
+            box-shadow: var(--glow-effect), var(--outer-shadow);
+            border-color: var(--primary-accent);
         }
 
         #alarm-list li.completed {
@@ -252,8 +283,8 @@
             background-color: var(--card-bg-color);
             color: var(--text-color-light);
             border: none;
-            padding: 12px 18px;
-            font-size: 1rem;
+            padding: 10px 15px;
+            font-size: 0.9rem;
             cursor: pointer;
             border-radius: 10px;
             box-shadow: var(--outer-shadow);
@@ -366,6 +397,7 @@
         .chat-actions .cta-button {
             padding: 10px 15px;
             width: auto;
+            font-size: 1rem;
         }
 
         /* --- Perubahan untuk Pesan Instan --- */
@@ -373,7 +405,7 @@
             padding: 0;
             background: none;
             word-wrap: break-word;
-            max-width: 85%;
+            max-width: 100%;
             font-size: 1.05rem;
             align-self: flex-start;
             margin-left: 0;
@@ -398,7 +430,8 @@
         }
         .chat-form .cta-button {
             width: auto;
-            padding: 10px 15px;
+            padding: 12px 18px;
+            font-size: 1.2rem;
         }
 
         /* --- Responsive Design --- */
@@ -432,7 +465,7 @@
             .dashboard-container {
                 grid-template-columns: 1fr;
                 gap: 20px;
-                padding: 0;
+                padding: 0 15px; /* Added padding for mobile */
                 grid-template-areas: 
                     "clock"
                     "alarm-control"
@@ -440,24 +473,18 @@
                     "chat-column"
                     "alarm-list";
             }
-            .clock-container {
-                flex-direction: column;
-                gap: 20px;
-                grid-area: clock;
-            }
             .clock-card {
-                grid-area: clock;
-            }
-            .date-display {
-                font-size: 1.2rem;
-                margin: 0;
-                margin-top: 10px;
-            }
-            .card {
                 padding: 25px;
             }
             .digital-clock {
                 font-size: 3.5rem;
+            }
+            .date-display {
+                font-size: 1rem;
+                margin-top: 10px;
+            }
+            .card {
+                padding: 25px;
             }
             .alarm-actions {
                 display: flex;
@@ -469,6 +496,14 @@
                 margin: 0;
                 padding: 10px;
                 font-size: 0.9rem;
+            }
+            .chat-actions .cta-button {
+                padding: 8px 12px;
+                font-size: 0.9rem;
+            }
+            .chat-form .cta-button {
+                padding: 10px 15px;
+                font-size: 1rem;
             }
         }
         
@@ -520,8 +555,9 @@
             <h2><i class="fas fa-bell"></i> Atur Alarm</h2>
             <form id="alarm-form">
                 <div class="form-group">
-                    <label for="alarm-datetime"><i class="fas fa-calendar-alt"></i> Tanggal & Waktu:</label>
-                    <input type="datetime-local" id="alarm-datetime" required>
+                    <label for="alarm-datetime-btn"><i class="fas fa-calendar-alt"></i> Tanggal & Waktu:</label>
+                    <button type="button" id="alarm-datetime-btn" class="datetime-input-button">Pilih Tanggal & Waktu</button>
+                    <input type="datetime-local" id="alarm-datetime-input" class="hidden-input" required>
                 </div>
                 <div class="form-group">
                     <label for="alarm-note">Catatan Pengingat:</label>
@@ -529,21 +565,6 @@
                 </div>
                 <button type="submit" class="cta-button"><i class="fas fa-plus"></i> Setel Alarm</button>
             </form>
-            <div class="voice-settings">
-                <h2><i class="fas fa-sliders-h"></i> Pengaturan Suara</h2>
-                <div class="form-group">
-                    <label for="voice-select">Pilih Suara:</label>
-                    <select id="voice-select"></select>
-                </div>
-                <div class="form-group">
-                    <label for="rate">Kecepatan:</label>
-                    <input type="range" id="rate" min="0.5" max="2" value="1" step="0.1">
-                </div>
-                <div class="form-group">
-                    <label for="pitch">Nada:</label>
-                    <input type="range" id="pitch" min="0" max="2" value="1" step="0.1">
-                </div>
-            </div>
         </section>
 
         <section class="prayer-times-section card">
@@ -558,11 +579,11 @@
                 </div>
             <form class="chat-form" id="chat-form">
                 <input type="text" id="chat-input" placeholder="Ketik pesan..." required>
-                <button type="submit" class="cta-button" style="width: auto; padding: 10px 15px;"><i class="fas fa-paper-plane"></i></button>
+                <button type="submit" class="cta-button"><i class="fas fa-paper-plane"></i></button>
             </form>
             <div class="chat-actions">
-                <button type="button" class="cta-button" id="reset-chat-btn" style="flex-grow: 1;"><i class="fas fa-trash-alt"></i> Reset Pesan</button>
-                <button type="button" class="cta-button" id="test-sound-btn" style="flex-grow: 1;"><i class="fas fa-volume-up"></i> Play Test Sound</button>
+                <button type="button" class="cta-button" id="reset-chat-btn"><i class="fas fa-trash-alt"></i> Reset Pesan</button>
+                <button type="button" class="cta-button" id="test-sound-btn"><i class="fas fa-volume-up"></i> Play Test Sound</button>
             </div>
         </section>
 
@@ -582,9 +603,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.1.0/firebase-app.js";
-        import { getDatabase, ref, push, onChildAdded, onValue, set } from "https://www.gstatic.com/firebasejs/9.1.0/firebase-database.js";
+        import { getDatabase, ref, push, onChildAdded, onValue, set, remove, update } from "https://www.gstatic.com/firebasejs/9.1.0/firebase-database.js";
 
-        // Your web app's Firebase configuration
         const firebaseConfig = {
           apiKey: "AIzaSyAP4QltMCp6jpEPgCJy-712N2MjtQX2zww",
           authDomain: "smart-dashboard-aa5c5.firebaseapp.com",
@@ -614,15 +634,26 @@
             const chatDisplay = document.getElementById('chat-display');
             const resetChatBtn = document.getElementById('reset-chat-btn');
             const testSoundBtn = document.getElementById('test-sound-btn');
+            const alarmDatetimeBtn = document.getElementById('alarm-datetime-btn');
+            const alarmDatetimeInput = document.getElementById('alarm-datetime-input');
             
             let alarms = [];
             let prayerTimes = {};
             let isSpeaking = false;
-            let currentAlarmInterval = null;
             let lastNotifiedPrayer = null;
-            let currentUtterance = null;
-            let lastSpokenNotificationTimestamp = 0;
+            let lastSpokenNotificationTimestamp = localStorage.getItem('lastSpokenNotificationTimestamp') || 0;
 
+            alarmDatetimeBtn.addEventListener('click', () => {
+                alarmDatetimeInput.click();
+            });
+
+            alarmDatetimeInput.addEventListener('change', () => {
+                const dateTimeValue = new Date(alarmDatetimeInput.value).toLocaleString('id-ID', {
+                    year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                });
+                alarmDatetimeBtn.textContent = dateTimeValue;
+            });
+            
             function updateClock() {
                 const now = new Date();
                 const hours = String(now.getHours()).padStart(2, '0');
@@ -664,18 +695,18 @@
             function speakText(text) {
                 if ('speechSynthesis' in window) {
                     window.speechSynthesis.cancel();
-                    currentUtterance = new SpeechSynthesisUtterance(text);
-                    currentUtterance.lang = 'id-ID';
-                    currentUtterance.rate = 1;
-                    currentUtterance.pitch = 1;
-                    window.speechSynthesis.speak(currentUtterance);
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.lang = 'id-ID';
+                    utterance.rate = 1;
+                    utterance.pitch = 1;
+                    window.speechSynthesis.speak(utterance);
                 }
             }
 
-            function showAlarmModal(displayText, voiceMessages) {
+            function showAlarmModal(displayText, voiceMessage) {
                 modalText.textContent = displayText;
                 modal.style.display = 'flex';
-                speakText(voiceMessages[0]);
+                speakText(voiceMessage);
             }
 
             function stopAlarm() {
@@ -688,14 +719,9 @@
             function getSpokenTime(date) {
                 const hours = date.getHours();
                 const minutes = date.getMinutes();
-
-                if (minutes === 0) {
-                    return `pukul ${hours} tepat`;
-                } else if (minutes < 10) {
-                    return `pukul ${hours} lewat nol ${minutes} menit`;
-                } else {
-                    return `pukul ${hours} ${minutes} menit`;
-                }
+                if (minutes === 0) return `pukul ${hours} tepat`;
+                if (minutes < 10) return `pukul ${hours} lewat nol ${minutes} menit`;
+                return `pukul ${hours} ${minutes} menit`;
             }
 
             function setNotification(message, type) {
@@ -714,20 +740,19 @@
                     if (!alarm.completed) {
                         const alarmTime = new Date(alarm.time);
                         const alarmTimeMinutes = Math.floor(alarmTime.getTime() / (60 * 1000));
-                        
                         const voiceMessage = `Sekarang ${getSpokenTime(alarmTime)}. Waktunya ${alarm.note || 'Pengingat tanpa catatan.'}.`;
                         
                         if (!alarm.initial_triggered && nowMinutes === alarmTimeMinutes) {
                             setNotification(voiceMessage, 'alarm');
                             alarm.initial_triggered = true;
                             alarm.last_triggered = now.getTime();
-                            // No need to save to Firebase here, onValue listener handles it
+                            update(ref(database, `alarms/${Object.keys(alarms).find(key => alarms[key].id === alarm.id)}`), alarm);
                         }
                         
                         if (alarm.initial_triggered && (now.getTime() - alarm.last_triggered) >= (20 * 60 * 1000)) {
                             setNotification(voiceMessage, 'alarm');
                             alarm.last_triggered = now.getTime();
-                            // No need to save to Firebase here, onValue listener handles it
+                            update(ref(database, `alarms/${Object.keys(alarms).find(key => alarms[key].id === alarm.id)}`), alarm);
                         }
                     }
                 });
@@ -791,7 +816,7 @@
 
             alarmForm.addEventListener('submit', (e) => {
                 e.preventDefault();
-                const alarmDateTime = document.getElementById('alarm-datetime').value;
+                const alarmDateTime = alarmDatetimeInput.value;
                 const alarmNote = document.getElementById('alarm-note').value;
 
                 if (alarmDateTime) {
@@ -805,23 +830,21 @@
                     };
                     push(alarmsRef, newAlarm);
                     alarmForm.reset();
+                    alarmDatetimeBtn.textContent = "Pilih Tanggal & Waktu";
                 }
             });
 
             alarmList.addEventListener('click', (e) => {
                 const button = e.target.closest('button');
                 if (!button) return;
-
-                const alarmIndex = button.dataset.index;
-                const alarmObject = alarms[alarmIndex];
+                
+                const alarmObject = alarms[button.dataset.index];
                 
                 if (button.classList.contains('delete-btn')) {
-                    const alarmKey = Object.keys(alarms).find(key => alarms[key].id === alarmObject.id);
-                    remove(ref(database, `alarms/${alarmKey}`));
+                    remove(ref(database, `alarms/${alarmObject.key}`));
                 } else if (button.classList.contains('complete-btn')) {
-                    const alarmKey = Object.keys(alarms).find(key => alarms[key].id === alarmObject.id);
                     const updates = {};
-                    updates[`alarms/${alarmKey}/completed`] = true;
+                    updates[`alarms/${alarmObject.key}/completed`] = true;
                     update(ref(database), updates);
                 } else if (button.classList.contains('test-btn')) {
                     const spokenTime = getSpokenTime(new Date(alarmObject.time));
@@ -845,10 +868,9 @@
                     push(chatRef, {
                         text: messageText,
                         timestamp: Date.now()
-                    }).then(() => {
-                        chatInput.value = '';
-                        setNotification("Perhatian, ada pesan masuk. Tolong dibaca.", 'chat');
                     });
+                    chatInput.value = '';
+                    setNotification("Perhatian, ada pesan masuk. Tolong dibaca.", 'chat');
                 }
             });
 
@@ -861,7 +883,6 @@
                 if (message.timestamp > Date.now() - 5000) {
                      messageElement.classList.add('sent');
                 }
-
                 chatDisplay.appendChild(messageElement);
                 chatDisplay.scrollTop = chatDisplay.scrollHeight;
             });
@@ -873,7 +894,7 @@
             onValue(alarmsRef, (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
-                    alarms = Object.values(data);
+                    alarms = Object.entries(data).map(([key, value]) => ({...value, key}));
                 } else {
                     alarms = [];
                 }
@@ -896,6 +917,7 @@
                     modal.style.display = 'flex';
                     speakText(notification.text);
                     lastSpokenNotificationTimestamp = notification.timestamp;
+                    localStorage.setItem('lastSpokenNotificationTimestamp', notification.timestamp);
                 }
             });
 
