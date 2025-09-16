@@ -583,7 +583,7 @@
         const database = getDatabase(app);
         const chatRef = ref(database, 'messages');
         const alarmsRef = ref(database, 'alarms');
-        const notificationsRef = ref(database, 'notifications'); // New Firebase Reference
+        const notificationsRef = ref(database, 'notifications');
 
         // --- JavaScript Start ---
         document.addEventListener('DOMContentLoaded', () => {
@@ -1008,14 +1008,13 @@
                 const notification = snapshot.val();
                 const notificationKey = snapshot.key;
 
-                // Check if the notification is recent to avoid playing old notifications on page load
                 if (notification.timestamp > Date.now() - 5000) {
-                    speakText(notification.text, () => {
-                        // Remove the notification from the database after it's been spoken
-                        // This prevents other devices from playing it and avoids an infinite loop
-                        remove(ref(database, `notifications/${notificationKey}`));
-                    });
+                    speakText(notification.text);
                 }
+                
+                // Remove the notification from the database after it's been spoken
+                // This prevents other devices from playing it and avoids an infinite loop
+                remove(ref(database, `notifications/${notificationKey}`));
             });
         });
         // --- JavaScript End ---
