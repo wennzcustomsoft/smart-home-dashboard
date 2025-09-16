@@ -565,7 +565,7 @@
     <script type="module">
         // Import the functions you need from the SDKs you need
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.1.0/firebase-app.js";
-        import { getDatabase, ref, push, onChildAdded, remove, onValue } from "https://www.gstatic.com/firebasejs/9.1.0/firebase-database.js";
+        import { getDatabase, ref, push, onChildAdded, remove, onValue, update } from "https://www.gstatic.com/firebasejs/9.1.0/firebase-database.js";
 
         // Your web app's Firebase configuration
         const firebaseConfig = {
@@ -583,6 +583,7 @@
         const database = getDatabase(app);
         const chatRef = ref(database, 'messages');
         const alarmsRef = ref(database, 'alarms');
+        const notificationsRef = ref(database, 'notifications'); // New Firebase Reference
 
         // --- JavaScript Start ---
         document.addEventListener('DOMContentLoaded', () => {
@@ -783,6 +784,16 @@
                 }
             }
 
+            // New function to send a notification command to Firebase
+            function sendNotification(message) {
+                push(notificationsRef, {
+                    text: message,
+                    timestamp: Date.now()
+                }).catch(error => {
+                    console.error("Failed to send notification:", error);
+                });
+            }
+
             function checkAlarms() {
                 const now = new Date();
                 const nowMinutes = Math.floor(now.getTime() / (60 * 1000));
@@ -794,21 +805,18 @@
                         
                         const spokenTime = getSpokenTime(alarmTime);
 
-                        const voiceMessages = [
-                            `Sekarang ${spokenTime}.`,
-                            `Waktunya ${alarm.note || 'Pengingat tanpa catatan.'}.`
-                        ];
+                        const voiceMessage = `Sekarang ${spokenTime}. Waktunya ${alarm.note || 'Pengingat tanpa catatan.'}.`;
                         const displayMessage = `Alarm: ${alarm.note || 'Tidak ada catatan'}`;
 
                         if (!alarm.initial_triggered && nowMinutes === alarmTimeMinutes) {
-                            showAlarmModal(displayMessage, voiceMessages);
+                            showAlarmModal(displayMessage, [voiceMessage]);
                             alarm.initial_triggered = true;
                             alarm.last_triggered = now.getTime();
                             saveAlarmsToFirebase();
                         }
 
                         if (alarm.initial_triggered && (now.getTime() - alarm.last_triggered) >= (20 * 60 * 1000)) {
-                            showAlarmModal(displayMessage, voiceMessages);
+                            showAlarmModal(displayMessage, [voiceMessage]);
                             alarm.last_triggered = now.getTime();
                             saveAlarmsToFirebase();
                         }
@@ -927,11 +935,8 @@
                     const alarm = alarms[button.dataset.index];
                     const alarmTime = new Date(alarm.time);
                     const spokenTime = getSpokenTime(alarmTime);
-                    const voiceMessages = [
-                        `Sekarang ${spokenTime}.`,
-                        `Waktunya ${alarm.note || 'Pengingat tanpa catatan.'}.`
-                    ];
-                    triggerAlarm(voiceMessages);
+                    const voiceMessage = `Sekarang ${spokenTime}. Waktunya ${alarm.note || 'Pengingat tanpa catatan.'}.`;
+                    sendNotification(voiceMessage);
                 }
             });
             
@@ -955,13 +960,8 @@
                         text: messageText,
                         timestamp: Date.now()
                     }).then(() => {
-                        chatInput.value = ''; // Kosongkan input setelah berhasil
-                        if (!isChatNotificationPlaying) {
-                            isChatNotificationPlaying = true;
-                            speakText("Perhatian, ada pesan masuk. Tolong dibaca.", () => {
-                                isChatNotificationPlaying = false;
-                            });
-                        }
+                        chatInput.value = '';
+                        sendNotification("Perhatian, ada pesan masuk. Tolong dibaca.");
                     }).catch(error => {
                         console.error("Gagal mengirim pesan:", error);
                     });
@@ -1001,6 +1001,21 @@
                     alarms = [];
                 }
                 renderAlarms();
+            });
+
+            // --- New: Firebase Notification Listener ---
+            onChildAdded(notificationsRef, (snapshot) => {
+                const notification = snapshot.val();
+                const notificationKey = snapshot.key;
+
+                // Check if the notification is recent to avoid playing old notifications on page load
+                if (notification.timestamp > Date.now() - 5000) {
+                    speakText(notification.text, () => {
+                        // Remove the notification from the database after it's been spoken
+                        // This prevents other devices from playing it and avoids an infinite loop
+                        remove(ref(database, `notifications/${notificationKey}`));
+                    });
+                }
             });
         });
         // --- JavaScript End ---
