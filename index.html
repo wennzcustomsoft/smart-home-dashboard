@@ -565,7 +565,7 @@
     <script type="module">
         // Import the functions you need from the SDKs you need
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.1.0/firebase-app.js";
-        import { getDatabase, ref, push, onChildAdded, remove } from "https://www.gstatic.com/firebasejs/9.1.0/firebase-database.js";
+        import { getDatabase, ref, push, onChildAdded, remove, onValue } from "https://www.gstatic.com/firebasejs/9.1.0/firebase-database.js";
 
         // Your web app's Firebase configuration
         const firebaseConfig = {
@@ -582,6 +582,7 @@
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
         const chatRef = ref(database, 'messages');
+        const alarmsRef = ref(database, 'alarms');
 
         // --- JavaScript Start ---
         document.addEventListener('DOMContentLoaded', () => {
@@ -600,13 +601,12 @@
             const chatDisplay = document.getElementById('chat-display');
             const resetChatBtn = document.getElementById('reset-chat-btn');
             
-            let alarms = JSON.parse(localStorage.getItem('alarms')) || [];
+            let alarms = [];
             let prayerTimes = {};
             let isSpeaking = false;
             let currentAlarmInterval = null;
             let lastNotifiedPrayer = null;
             let currentUtterance = null;
-            let currentUtteranceCallback = null;
             let isChatNotificationPlaying = false;
 
             // --- Utility Functions ---
@@ -804,13 +804,13 @@
                             showAlarmModal(displayMessage, voiceMessages);
                             alarm.initial_triggered = true;
                             alarm.last_triggered = now.getTime();
-                            saveAlarms();
+                            saveAlarmsToFirebase();
                         }
 
                         if (alarm.initial_triggered && (now.getTime() - alarm.last_triggered) >= (20 * 60 * 1000)) {
                             showAlarmModal(displayMessage, voiceMessages);
                             alarm.last_triggered = now.getTime();
-                            saveAlarms();
+                            saveAlarmsToFirebase();
                         }
                     }
                 });
@@ -845,12 +845,23 @@
                 checkPrayerTimes();
             }, 60000);
 
-            // --- Data & UI Management ---
+            // --- Manajemen Data & UI ---
 
-            function saveAlarms() {
-                localStorage.setItem('alarms', JSON.stringify(alarms));
+            // Fungsi untuk menyimpan alarm ke Firebase (menggantikan localStorage)
+            function saveAlarmsToFirebase() {
+                // Hapus data lama di Firebase dan simpan data baru
+                remove(alarmsRef).then(() => {
+                    if (alarms.length > 0) {
+                        const updatedData = {};
+                        alarms.forEach((alarm, index) => {
+                             updatedData[index] = alarm;
+                        });
+                        push(alarmsRef.parent, updatedData);
+                    }
+                });
             }
 
+            // Fungsi untuk merender alarm yang diambil dari Firebase
             function renderAlarms() {
                 alarmList.innerHTML = '';
                 alarms.sort((a, b) => new Date(a.time) - new Date(b.time));
@@ -879,8 +890,7 @@
                 });
             }
 
-            // --- Event Listeners ---
-
+            // Event Listener untuk tombol "Setel Alarm"
             alarmForm.addEventListener('submit', (e) => {
                 e.preventDefault();
                 const alarmDateTime = document.getElementById('alarm-datetime').value;
@@ -895,28 +905,26 @@
                         last_triggered: null,
                         completed: false
                     };
-                    alarms.push(newAlarm);
-                    saveAlarms();
-                    renderAlarms();
+                    push(alarmsRef, newAlarm);
                     alarmForm.reset();
                 }
             });
 
+            // Event Listener untuk tombol di daftar alarm
             alarmList.addEventListener('click', (e) => {
                 const button = e.target.closest('button');
                 if (!button) return;
 
-                const index = button.dataset.index;
+                const key = Object.keys(alarms.find(alarm => alarm.id === alarms[button.dataset.index].id));
+
                 if (button.classList.contains('delete-btn')) {
-                    alarms.splice(index, 1);
-                    saveAlarms();
-                    renderAlarms();
+                    remove(ref(database, `alarms/${key[0]}`));
                 } else if (button.classList.contains('complete-btn')) {
-                    alarms[index].completed = true;
-                    saveAlarms();
-                    renderAlarms();
+                    const updates = {};
+                    updates[`alarms/${key[0]}/completed`] = true;
+                    update(ref(database), updates);
                 } else if (button.classList.contains('test-btn')) {
-                    const alarm = alarms[index];
+                    const alarm = alarms[button.dataset.index];
                     const alarmTime = new Date(alarm.time);
                     const spokenTime = getSpokenTime(alarmTime);
                     const voiceMessages = [
@@ -926,6 +934,7 @@
                     triggerAlarm(voiceMessages);
                 }
             });
+            
 
             stopAlarmModalBtn.addEventListener('click', stopAlarm);
             
@@ -983,7 +992,16 @@
                 });
             });
 
-            renderAlarms();
+            // Menerima data alarm real-time dari Firebase
+            onValue(alarmsRef, (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    alarms = Object.values(data);
+                } else {
+                    alarms = [];
+                }
+                renderAlarms();
+            });
         });
         // --- JavaScript End ---
     </script>
