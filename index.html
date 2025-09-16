@@ -57,9 +57,29 @@
                 "alarm-control chat-column prayer-times"
                 "alarm-list alarm-list alarm-list";
         }
-        
-        .clock-card {
+
+        .clock-container {
+            display: flex;
+            gap: 20px;
             grid-area: clock;
+        }
+        
+        .clock-card, .date-card {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            background: var(--card-bg-color);
+            border-radius: 25px;
+            box-shadow: var(--outer-shadow);
+            border: 1px solid rgba(0, 230, 255, 0.2);
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        
+        .date-card {
+            display: none;
         }
 
         .alarm-control-section {
@@ -186,24 +206,7 @@
         }
 
         .voice-settings {
-            margin-top: 30px;
-            padding-top: 30px;
-            border-top: 1px dashed #444;
-        }
-        .voice-settings .form-group {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 20px;
-        }
-        .voice-settings .form-group label {
-            width: 30%;
-            margin-bottom: 0;
-        }
-        .voice-settings .form-group input[type="range"] {
-            width: 65%;
-            padding: 0;
-            box-shadow: none;
+            display: none;
         }
         
         /* Alarm List */
@@ -417,19 +420,36 @@
                 gap: 20px;
                 grid-template-areas: 
                     "clock"
+                    "date"
                     "alarm-control"
                     "prayer-times"
                     "chat-column"
                     "alarm-list";
             }
-            .card {
-                padding: 25px;
+            .clock-container {
+                flex-direction: column;
+                gap: 20px;
+                grid-area: clock;
             }
+
+            .clock-card {
+                grid-area: clock;
+            }
+
+            .date-card {
+                display: block;
+                grid-area: date;
+            }
+
             .digital-clock {
                 font-size: 3.5rem;
             }
             .date-display {
                 font-size: 1.2rem;
+                margin: 0;
+            }
+            .card {
+                padding: 25px;
             }
             .voice-settings .form-group {
                 flex-direction: column;
@@ -492,9 +512,13 @@
 <body>
 
     <div class="dashboard-container">
-        <header class="card clock-card">
-            <div class="digital-clock" id="digital-clock"></div>
-            <p class="date-display" id="date-display"></p>
+        <header class="clock-container">
+            <div class="clock-card">
+                <div class="digital-clock" id="digital-clock"></div>
+            </div>
+            <div class="date-card">
+                <p class="date-display" id="date-display"></p>
+            </div>
         </header>
 
         <section class="alarm-control-section card">
@@ -594,9 +618,6 @@
             const modal = document.getElementById('alarm-modal');
             const modalText = document.getElementById('modal-text');
             const stopAlarmModalBtn = document.getElementById('stop-alarm-modal');
-            const voiceSelect = document.getElementById('voice-select');
-            const rateInput = document.getElementById('rate');
-            const pitchInput = document.getElementById('pitch');
             const chatForm = document.getElementById('chat-form');
             const chatInput = document.getElementById('chat-input');
             const chatDisplay = document.getElementById('chat-display');
@@ -609,6 +630,7 @@
             let lastNotifiedPrayer = null;
             let currentUtterance = null;
             let isChatNotificationPlaying = false;
+            let lastSpokenNotification = null;
 
             // --- Utility Functions ---
             
@@ -651,61 +673,19 @@
             getPrayerTimes();
 
             // --- Text-to-Speech Functions ---
-
-            let voices = [];
-            function populateVoiceList() {
-                voices = window.speechSynthesis.getVoices();
-                voiceSelect.innerHTML = '';
-                let defaultIndonesianVoice = null;
-                
-                voices.forEach(voice => {
-                    if (voice.lang.startsWith('id-')) {
-                        const option = new Option(voice.name, voice.name);
-                        voiceSelect.add(option);
-                        if (voice.default) {
-                            defaultIndonesianVoice = voice.name;
-                        }
-                    }
-                });
-                
-                if (defaultIndonesianVoice) {
-                    voiceSelect.value = defaultIndonesianVoice;
-                }
-                
-                if (voiceSelect.options.length === 0) {
-                    voices.forEach(voice => {
-                         const option = new Option(`${voice.name} (${voice.lang})`, voice.name);
-                         voiceSelect.add(option);
-                    });
-                }
-            }
-
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.onvoiceschanged = populateVoiceList;
-                populateVoiceList();
-            } else {
-                voiceSelect.style.display = 'none';
-                document.querySelector('.voice-settings').style.display = 'none';
-            }
-
-            function speakText(text, callback) {
+            
+            function speakText(text) {
                 if ('speechSynthesis' in window) {
                     window.speechSynthesis.cancel();
                     
                     currentUtterance = new SpeechSynthesisUtterance(text);
                     currentUtterance.lang = 'id-ID';
                     
-                    const selectedVoice = voices.find(voice => voice.name === voiceSelect.value);
-                    if (selectedVoice) {
-                        currentUtterance.voice = selectedVoice;
-                    }
-
-                    currentUtterance.rate = parseFloat(rateInput.value);
-                    currentUtterance.pitch = parseFloat(pitchInput.value);
+                    currentUtterance.rate = 1;
+                    currentUtterance.pitch = 1;
 
                     currentUtterance.onend = () => {
                         currentUtterance = null;
-                        if (callback) callback();
                     };
 
                     window.speechSynthesis.speak(currentUtterance);
@@ -784,10 +764,10 @@
                 }
             }
 
-            // New function to send a notification command to Firebase
-            function sendNotification(message) {
+            function sendNotification(message, type) {
                 push(notificationsRef, {
                     text: message,
+                    type: type,
                     timestamp: Date.now()
                 }).catch(error => {
                     console.error("Failed to send notification:", error);
@@ -803,20 +783,17 @@
                         const alarmTime = new Date(alarm.time);
                         const alarmTimeMinutes = Math.floor(alarmTime.getTime() / (60 * 1000));
                         
-                        const spokenTime = getSpokenTime(alarmTime);
-
-                        const voiceMessage = `Sekarang ${spokenTime}. Waktunya ${alarm.note || 'Pengingat tanpa catatan.'}.`;
-                        const displayMessage = `Alarm: ${alarm.note || 'Tidak ada catatan'}`;
-
+                        const voiceMessage = `Sekarang ${getSpokenTime(alarmTime)}. Waktunya ${alarm.note || 'Pengingat tanpa catatan.'}.`;
+                        
                         if (!alarm.initial_triggered && nowMinutes === alarmTimeMinutes) {
-                            showAlarmModal(displayMessage, [voiceMessage]);
+                            sendNotification(voiceMessage, 'alarm');
                             alarm.initial_triggered = true;
                             alarm.last_triggered = now.getTime();
                             saveAlarmsToFirebase();
                         }
-
+                        
                         if (alarm.initial_triggered && (now.getTime() - alarm.last_triggered) >= (20 * 60 * 1000)) {
-                            showAlarmModal(displayMessage, [voiceMessage]);
+                            sendNotification(voiceMessage, 'alarm');
                             alarm.last_triggered = now.getTime();
                             saveAlarmsToFirebase();
                         }
@@ -841,8 +818,7 @@
                 for (const prayer in prayers) {
                     if (currentTime === prayers[prayer] && lastNotifiedPrayer !== prayer) {
                         const noteText = `Assalamualaikum, sekarang jam ${currentTime}, segera lakukan shalat ${prayer}, jangan ditunda lagi ya.`;
-                        const displayMessage = `Waktunya Shalat ${prayer}`;
-                        showAlarmModal(displayMessage, [noteText]);
+                        sendNotification(noteText, 'prayer');
                         lastNotifiedPrayer = prayer;
                     }
                 }
@@ -855,9 +831,7 @@
 
             // --- Manajemen Data & UI ---
 
-            // Fungsi untuk menyimpan alarm ke Firebase (menggantikan localStorage)
             function saveAlarmsToFirebase() {
-                // Hapus data lama di Firebase dan simpan data baru
                 remove(alarmsRef).then(() => {
                     if (alarms.length > 0) {
                         const updatedData = {};
@@ -869,7 +843,6 @@
                 });
             }
 
-            // Fungsi untuk merender alarm yang diambil dari Firebase
             function renderAlarms() {
                 alarmList.innerHTML = '';
                 alarms.sort((a, b) => new Date(a.time) - new Date(b.time));
@@ -898,7 +871,6 @@
                 });
             }
 
-            // Event Listener untuk tombol "Setel Alarm"
             alarmForm.addEventListener('submit', (e) => {
                 e.preventDefault();
                 const alarmDateTime = document.getElementById('alarm-datetime').value;
@@ -918,25 +890,25 @@
                 }
             });
 
-            // Event Listener untuk tombol di daftar alarm
             alarmList.addEventListener('click', (e) => {
                 const button = e.target.closest('button');
                 if (!button) return;
 
-                const key = Object.keys(alarms.find(alarm => alarm.id === alarms[button.dataset.index].id));
-
+                const alarmIndex = button.dataset.index;
+                const alarmObject = alarms[alarmIndex];
+                
                 if (button.classList.contains('delete-btn')) {
-                    remove(ref(database, `alarms/${key[0]}`));
+                    const alarmKey = Object.keys(alarms).find(key => alarms[key].id === alarmObject.id);
+                    remove(ref(database, `alarms/${alarmKey}`));
                 } else if (button.classList.contains('complete-btn')) {
+                    const alarmKey = Object.keys(alarms).find(key => alarms[key].id === alarmObject.id);
                     const updates = {};
-                    updates[`alarms/${key[0]}/completed`] = true;
+                    updates[`alarms/${alarmKey}/completed`] = true;
                     update(ref(database), updates);
                 } else if (button.classList.contains('test-btn')) {
-                    const alarm = alarms[button.dataset.index];
-                    const alarmTime = new Date(alarm.time);
-                    const spokenTime = getSpokenTime(alarmTime);
-                    const voiceMessage = `Sekarang ${spokenTime}. Waktunya ${alarm.note || 'Pengingat tanpa catatan.'}.`;
-                    sendNotification(voiceMessage);
+                    const spokenTime = getSpokenTime(new Date(alarmObject.time));
+                    const voiceMessage = `Sekarang ${spokenTime}. Waktunya ${alarmObject.note || 'Pengingat tanpa catatan.'}.`;
+                    sendNotification(voiceMessage, 'test');
                 }
             });
             
@@ -961,7 +933,7 @@
                         timestamp: Date.now()
                     }).then(() => {
                         chatInput.value = '';
-                        sendNotification("Perhatian, ada pesan masuk. Tolong dibaca.");
+                        sendNotification("Perhatian, ada pesan masuk. Tolong dibaca.", 'chat');
                     }).catch(error => {
                         console.error("Gagal mengirim pesan:", error);
                     });
@@ -996,24 +968,39 @@
             onValue(alarmsRef, (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
-                    alarms = Object.values(data);
+                    alarms = Object.entries(data).map(([key, value]) => ({...value, key}));
                 } else {
                     alarms = [];
                 }
                 renderAlarms();
             });
 
-            // --- New: Firebase Notification Listener ---
+            // --- Firebase Notification Listener ---
             onChildAdded(notificationsRef, (snapshot) => {
                 const notification = snapshot.val();
                 const notificationKey = snapshot.key;
 
-                if (notification.timestamp > Date.now() - 5000) {
-                    speakText(notification.text);
+                if (lastSpokenNotification === notification.text) {
+                     remove(ref(database, `notifications/${notificationKey}`));
+                     return;
                 }
                 
-                // Remove the notification from the database after it's been spoken
-                // This prevents other devices from playing it and avoids an infinite loop
+                if (notification.timestamp > Date.now() - 5000) {
+                    let modalMessage = "";
+                    if (notification.type === 'chat') {
+                        modalMessage = "Pesan masuk!";
+                    } else if (notification.type === 'alarm' || notification.type === 'test') {
+                        modalMessage = "Alarm Berbunyi!";
+                    } else if (notification.type === 'prayer') {
+                        modalMessage = "Waktunya Shalat!";
+                    }
+                    
+                    modalText.textContent = modalMessage;
+                    modal.style.display = 'flex';
+                    speakText(notification.text);
+                    lastSpokenNotification = notification.text;
+                }
+                
                 remove(ref(database, `notifications/${notificationKey}`));
             });
         });
