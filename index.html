@@ -54,7 +54,7 @@
             gap: 30px;
             grid-template-columns: 1fr 1fr 1fr;
             grid-template-areas: 
-                "clock clock clock"
+                "clock clock banner"
                 "alarm-control chat-column prayer-times"
                 "alarm-list alarm-list alarm-list";
             padding: 0 20px;
@@ -114,7 +114,7 @@
         
         .card:hover {
             transform: var(--hover-effect);
-            box-shadow: var(--outer-shadow); /* Glow effect removed on hover */
+            box-shadow: var(--outer-shadow);
             border-color: var(--primary-accent);
         }
         
@@ -576,6 +576,10 @@
             <div class="digital-clock" id="digital-clock"></div>
             <p class="date-display" id="date-display"></p>
         </header>
+        
+        <section class="banner-placeholder">
+            <p>Kotak Banner: Ukuran untuk gambar 200px tinggi x 290px lebar</p>
+        </section>
 
         <section class="alarm-control-section card">
             <h2><i class="fas fa-bell"></i> Atur Alarm</h2>
@@ -938,9 +942,7 @@
                         }
                     })();
                     
-                    modalText.textContent = modalMessage;
-                    modal.style.display = 'flex';
-                    speakText(notification.text);
+                    showAlarmModal(modalMessage, notification.text);
                     lastSpokenNotificationTimestamp = notification.timestamp;
                     localStorage.setItem('lastSpokenNotificationTimestamp', notification.timestamp);
                 }
